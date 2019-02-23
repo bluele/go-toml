@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+var TagName = "toml"
+
 const tagKeyMultiline = "multiline"
 
 type tomlOpts struct {
@@ -581,7 +583,7 @@ func (d *Decoder) unwrapPointer(mtype reflect.Type, tval interface{}) (reflect.V
 }
 
 func tomlOptions(vf reflect.StructField) tomlOpts {
-	tag := vf.Tag.Get("toml")
+	tag := vf.Tag.Get(TagName)
 	parse := strings.Split(tag, ",")
 	var comment string
 	if c := vf.Tag.Get("comment"); c != "" {
