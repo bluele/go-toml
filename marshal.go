@@ -510,7 +510,7 @@ func (d *Decoder) valueFromToml(mtype reflect.Type, tval interface{}) (reflect.V
 			}
 
 			return val.Convert(mtype), nil
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32:
 			val := reflect.ValueOf(tval)
 			if !val.Type().ConvertibleTo(mtype) {
 				return reflect.ValueOf(nil), fmt.Errorf("Can't convert %v(%T) to %v", tval, tval, mtype.String())
@@ -518,7 +518,28 @@ func (d *Decoder) valueFromToml(mtype reflect.Type, tval interface{}) (reflect.V
 			if reflect.Indirect(reflect.New(mtype)).OverflowInt(val.Int()) {
 				return reflect.ValueOf(nil), fmt.Errorf("%v(%T) would overflow %v", tval, tval, mtype.String())
 			}
-
+			return val.Convert(mtype), nil
+		case reflect.Int64:
+			val := reflect.ValueOf(tval)
+			if !val.Type().ConvertibleTo(mtype) {
+				if mtype.Name() == "Duration" {
+					sp := reflect.TypeOf("")
+					if !val.Type().ConvertibleTo(sp) || val.Kind() == reflect.Int64 {
+						return reflect.ValueOf(nil), fmt.Errorf("Can't convert %v(%T) to %v", tval, tval, mtype.String())
+					}
+					val = val.Convert(sp)
+					s := val.Interface().(string)
+					d, err := time.ParseDuration(s)
+					if err != nil {
+						return reflect.ValueOf(nil), err
+					}
+					return reflect.ValueOf(d), nil
+				}
+				return reflect.ValueOf(nil), fmt.Errorf("Can't convert %v(%T) to %v", tval, tval, mtype.String())
+			}
+			if reflect.Indirect(reflect.New(mtype)).OverflowInt(val.Int()) {
+				return reflect.ValueOf(nil), fmt.Errorf("%v(%T) would overflow %v", tval, tval, mtype.String())
+			}
 			return val.Convert(mtype), nil
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 			val := reflect.ValueOf(tval)
